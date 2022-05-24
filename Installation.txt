@@ -1,0 +1,18 @@
+conda create --name implementare python=3.6 tornado=6.1
+conda activate implementare
+conda install -c menpo opencv
+unset PYTHONPATH
+conda install pytorch==1.4.0 torchvision==0.5.0 -c pytorch
+pip install cython; pip install -U 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
+pip install -r requirements.txt
+pip install google-cloud-automl
+pip install opencv-contrib-python==4.1.2.30
+pip install matplotlib
+pip install gTTS
+# pip install tensorflow==1.13.1
+pip install tflearn
+pip install imutils
+
+Enter python and run the following command to add _ext to lib path
+import sys
+sys.path.insert(0, "/path/to/the/repo/object_detector/lib/model/networks/DCNv2")
