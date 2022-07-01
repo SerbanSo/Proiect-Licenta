@@ -114,3 +114,6 @@ datasets/*
 
 # frames
 video/*
+
+#3D-BB
+3D-bounding-box/*

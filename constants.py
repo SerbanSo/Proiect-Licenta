@@ -6,7 +6,8 @@ SIMILARITY_ERROR = 10
 
 # Prediction confidence. Every prediction with a confidence below this thres-
 # hold is discarded.
-CONF_THRESHOLD = 0.35
+# CONF_THRESHOLD = 0.35
+CONF_THRESHOLD = 0.25
 
 BLUE = (0, 0, 255)
 

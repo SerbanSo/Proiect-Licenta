@@ -13,6 +13,13 @@ pip install gTTS
 pip install tflearn
 pip install imutils
 
+# For 3D-bounding-box -> objectron
+
+conda install -c conda-forge frozendict
+
+# For frustsum
+pip install mayavi
+
 Enter python and run the following command to add _ext to lib path
 import sys
 sys.path.insert(0, "/path/to/the/repo/object_detector/lib/model/networks/DCNv2")

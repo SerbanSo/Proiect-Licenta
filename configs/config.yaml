@@ -1,8 +1,8 @@
 seed: 123
 num_gpus: 1
-num_epochs: 100
+num_epochs: 10
 resume_dir: None
-print_interval: 10
+print_interval: 1
 
 solver:
   method: adam

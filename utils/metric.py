@@ -1,6 +1,5 @@
 import numpy as np
 
-
 # https://github.com/davisvideochallenge/davis/blob/master/python/lib/davis/measures/jaccard.py
 def eval_iou(annotation,segmentation):
     """ Compute region similarity as the Jaccard Index.
@@ -145,3 +144,82 @@ def eval_plane_and_pixel_recall_normal(segmentation, gt_segmentation, param, gt_
 
     return plane_recall, pixel_recall
 
+def pixel_accuracy(pred, groundtruth):
+	correct = 0
+	total = pred.shape[0] * pred.shape[1]
+
+	c = True
+	f = True
+
+	print(pred.shape)
+	print(groundtruth.shape)
+
+	for i in range(pred.shape[0]):
+		for j in range(pred.shape[1]):
+			
+
+			if pred[i][j].all() == groundtruth[i][j].all():
+				if c:
+					print('Correct: ' + str(pred[i][j]) + ' ' + str(groundtruth[i][j]))
+					c = False
+				correct += 1
+			else:
+				if f:
+					print('Wrong: ' + str(pred[i][j]) + ' ' + str(groundtruth[i][j]))
+					f = False
+			
+			if groundtruth[i][j][0] != 0 and groundtruth[i][j][1] != 0 and groundtruth[i][j][2] != 0 and groundtruth[i][j][0] != 255 and groundtruth[i][j][1] != 255 and groundtruth[i][j][2] != 255:
+				print(groundtruth[i][j])
+
+	return correct / float(total) * 100
+
+
+def black_and_white_img(img):
+	for i in range(img.shape[0]):
+		for j in range(img.shape[1]):
+			if img[i][j][0] < 128 and img[i][j][1] < 128 and img[i][j][2] < 128:
+				img[i][j][0] = 0
+				img[i][j][1] = 0
+				img[i][j][2] = 0
+			else:
+				img[i][j][0] = 255
+				img[i][j][1] = 255
+				img[i][j][2] = 255
+	
+	return img
+
+
+def color_to_white_img(img):
+	for i in range(img.shape[0]):
+		for j in range(img.shape[1]):
+			if img[i][j][0] != 0 or img[i][j][1] != 0 or img[i][j][2] != 0:
+				img[i][j][0] = 255
+				img[i][j][1] = 255
+				img[i][j][2] = 255
+	
+	return img
+
+def zoom_to_plane(img):
+	line = 0
+	column = 0
+	ok = False
+	for i in range(img.shape[0]):
+		if ok:
+			break
+		for j in range(img.shape[1]):
+			if img[i][j][0] != 0 or img[i][j][1] != 0 or img[i][j][2] != 0:
+				line = i
+				ok = True
+				break
+
+	ok = False
+	for i in range(img.shape[1]):
+		if ok:
+			break
+		for j in range(img.shape[0]):
+			if img[j][i][0] != 0 or img[j][i][1] != 0 or img[j][i][2] != 0:
+				column = i
+				ok = True
+				break
+
+	return line, column
