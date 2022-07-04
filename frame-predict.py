@@ -27,7 +27,7 @@ import mediapipe as mp
 from objects_detector import detect_objects, init_detector
 
 
-DEMO_IMG = 2
+DEMO_IMG = 1
 
 ex = Experiment()
 
@@ -159,6 +159,8 @@ def predict(_run, _log):
                 # forward pass
                 logit, embedding, _, _, param = network(image)
 
+                orig_h, orig_w, _ = cp_img.shape
+
                 prob = torch.sigmoid(logit[0])
 
                 # infer per pixel depth using per pixel plane parameter, currently Q_loss need a dummy gt_depth as input
@@ -247,7 +249,8 @@ def predict(_run, _log):
 
                 orig_image = image
                 # filter_1_img = np.concatenate((image, floor_mask_1_img, floor_mask_1_img * 0.7 + image * 0.3, pred_flo), axis=1)
-                filter_1_img = np.concatenate((image, floor_mask_1_img, (floor_mask_1_img * 0.7 + image * 0.3).astype(np.uint8), pred_flo, pred_seg), axis=1)
+                # filter_1_img = np.concatenate((image, floor_mask_1_img, (floor_mask_1_img * 0.7 + image * 0.3).astype(np.uint8), pred_flo, pred_seg), axis=1)
+                filter_1_img = np.concatenate((cv2.resize(cp_img, (300, 300)), cv2.resize((floor_mask_1_img * 0.7 + image * 0.3).astype(np.uint8), (300, 300)), cv2.resize(pred_flo, (300, 300)), cv2.resize(pred_seg, (300, 300))), axis=1)
                 filter_2_img = np.concatenate((image, floor_mask_2_img, (floor_mask_2_img * 0.7 + image * 0.3).astype(np.uint8), pred_flo, pred_seg), axis=1)
                 floor_exemple = np.concatenate((image, (pred_flo * 0.7 + image * 0.3).astype(np.uint8)), axis=1)
                 image = np.concatenate((image, pred_flo, blend_pred, mask, depth), axis=1)
@@ -268,11 +271,15 @@ def predict(_run, _log):
                 # img_smooth = np.concatenate((pred_seg_not_smooth, pred_seg), axis=1)
                 # img_not_smooth = blend_pred_not_smooth
 
+                pred_flo = cv2.resize(pred_flo, (orig_h, orig_w))
+
                 line, column = zoom_to_plane(pred_flo)
                 print(str(line) + ' ' + str(column))
-                zoomed_image = orig_image.copy()
+                # zoomed_image = orig_image.copy()
+                zoomed_image = cp_img.copy()
                 zoomed_image = zoomed_image[line:, column:, :]
-                zoomed_image_diff = orig_image.copy()
+                zoomed_image_diff = cp_img.copy()
+                # zoomed_image_diff = orig_image.copy()
                 zoomed_image_diff[:line, :, :] = 0
                 zoomed_image_diff[:, :column, :] = 0
 
@@ -297,7 +304,8 @@ def predict(_run, _log):
                 # cv2.imshow("Detected objects", zoomed_image)
                 # cv2.waitKey(0)
                 # detected_obj_img = detect_objects([orig_image.copy()], detector, verbose=2)
-                detected_obj_img = detect_objects([zoomed_image], detector, verbose=2)
+                # detected_obj_img = detect_objects([cv2.resize(zoomed_image, (512, 512))], detector, verbose=2)
+                detected_obj_img = detect_objects([cv2.resize(cp_img.copy(), (512, 512))], detector, verbose=2)
                 # print('Before detect_objects')
                 # detect_objects([zoomed_image], verbose=3)
                 # print('After detect_objects')
@@ -320,18 +328,22 @@ def predict(_run, _log):
                 # image = black_and_white_img(image)
                 # pred_flo = color_to_white_img(pred_flo)
 
-                annotated_image = cp_img.copy() 
+                # annotated_image = cp_img.copy() 
+                annotated_image = cv2.resize(cp_img.copy(), (300, 300)).copy() 
                 annotated_image = objectron_object(mp_objectron, mp_drawing, annotated_image, object='Shoe')
                 annotated_image = objectron_object(mp_objectron, mp_drawing, annotated_image, object='Cup')
-                annotated_image = cv2.resize(annotated_image, (w, h))
+                # annotated_image = cv2.resize(annotated_image, (w, h))
+                annotated_image = cv2.resize(annotated_image, (300, 300))
                 # annotated_image = objectron_object(mp_objectron, mp_drawing, annotated_image, object='Shoe')
 
                 # demo_img = np.concatenate((zoomed_image, detected_obj_img), axis=1)
-                demo_img = np.concatenate((orig_image, zoomed_image_diff), axis=1)
+                demo_img = np.concatenate((cv2.resize(cp_img, (300, 300)), cv2.resize(zoomed_image_diff, (300, 300))), axis=1)
                 # demo_img = np.concatenate((orig_image, zoomed_image_diff), axis=1)
                 # cv2.imshow("Detected objects", demo_img)
                 # cv2.waitKey(0)
                 # demo_img = np.concatenate((orig_image, annotated_image), axis=1)
+
+                detected_objects = np.concatenate((cv2.resize(detected_obj_img, (300, 300)), annotated_image), axis=1)
 
                 # cv2.imshow("Detected objects", annotated_image)
                 # cv2.imshow("Detected objects", pred_flo)
@@ -345,10 +357,12 @@ def predict(_run, _log):
                         cv2.waitKey(0)
                         cv2.imshow("Detected objects", demo_img)
                         cv2.waitKey(0)
-                        cv2.imshow("Detected objects", detected_obj_img)
+                        cv2.imshow("Detected objects", detected_objects)
                         cv2.waitKey(0)
-                        cv2.imshow("Detected objects", annotated_image)
-                        cv2.waitKey(0)
+                        # cv2.imshow("Detected objects", detected_obj_img)
+                        # cv2.waitKey(0)
+                        # cv2.imshow("Detected objects", annotated_image)
+                        # cv2.waitKey(0)
                 else:
                         demo_video = np.concatenate((orig_image, pred_flo, cv2.resize(detected_obj_img, (w, h)), annotated_image), axis=1)
                         cv2.imshow("Detected objects", demo_video)
@@ -380,9 +394,9 @@ def objectron_object(mp_objectron, mp_drawing, annotated_image, object='Shoe'):
 
         # Draw box landmarks.
         if not results.detected_objects:
-            print(f'No box landmarks detected on Shoe')
+            print(f'No box landmarks detected')
         else:
-            print(f'Box landmarks of Shoe')
+            print(f'Box landmarks detected')
             for detected_object in results.detected_objects:
                 mp_drawing.draw_landmarks(
                     annotated_image, detected_object.landmarks_2d, mp_objectron.BOX_CONNECTIONS)
